@@ -1018,7 +1018,7 @@
 
   <script>
     // IMPORTANT: Paste your Gemini API key inside the quotes below
-    const GEMINI_API_KEY = "AIzaSyDNfBW3J6gsPEHNC2qiKlwlIOI0LZ3XcHE";
+    const GEMINI_API_KEY = "YOUR_API_KEY_HERE";
     // ─── State ───────────────────────────────────────────────────
     const state = {
       files: [],
@@ -1292,7 +1292,11 @@ Generate the complete blog post now, following the structure and rules precisely
         document.getElementById('downloadBtn').disabled = false;
 
       } catch (err) {
-        showError('Generation failed: ' + (err.message || 'Unknown error'));
+        let errMsg = err.message || 'Unknown error';
+        if (errMsg.includes('reported as leaked')) {
+          errMsg = 'Your API key was rejected. Please use a different key or rotate your current key.';
+        }
+        showError('Generation failed: ' + errMsg);
         document.getElementById('pipelinePanel').style.display = 'none';
       } finally {
         state.isGenerating = false;
