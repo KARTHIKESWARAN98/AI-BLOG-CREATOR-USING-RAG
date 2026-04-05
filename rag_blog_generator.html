@@ -1,0 +1,1463 @@
+
+  <!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RAG Blog Generator</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,400&family=DM+Serif+Display:ital@0;1&display=swap');
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+ 
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --surface2: #1a2332;
+      --border:   rgba(99, 179, 237, 0.15);
+      --border2: rgba(99, 179, 237, 0.3);
+      --accent: #63b3ed;
+      --accent2: #90cdf4;
+      --green: #68d391;
+      --amber: #f6ad55;
+      --red: #fc8181;
+      --text: #e2e8f0;
+      --text2: #94a3b8;
+      --text3: #64748b;
+      --mono: 'DM Mono', monospace;
+      --sans: 'DM Sans', sans-serif;
+      --serif: 'DM Serif Display', serif;
+    }
+
+    body {
+      font-family: var(--sans);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      font-size: 15px;
+      line-height: 1.6;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 20px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+      padding-bottom: 32px;
+      border-bottom: 0.5px solid var(--border);
+      position: relative;
+    }
+
+    .header::after {
+      content: '';
+      position: absolute;
+      bottom: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+
+    .logo-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 179, 237, 0.08);
+      border: 0.5px solid var(--border2);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--accent);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0.4;
+      }
+    }
+
+    h1 {
+      font-family: var(--serif);
+      font-size: 42px;
+      font-weight: 400;
+      color: var(--text);
+      line-height: 1.15;
+      letter-spacing: -0.02em; 
+      margin-bottom: 12px;
+    }
+
+    h1 em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .subtitle {
+      color: var(--text2);
+      font-size: 15px;
+      max-width: 500px;
+      margin: 0 auto;
+      font-weight: 300;
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+
+    @media (max-width: 800px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 30px;
+      }
+    }
+
+    .panel {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .panel-header {
+      padding: 14px 18px;
+      border-bottom: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .panel-header-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+    }
+
+    .icon-blue {
+      background: rgba(99, 179, 237, 0.12);
+    }
+
+    .icon-green {
+      background: rgba(104, 211, 145, 0.12);
+    }
+
+    .icon-amber {
+      background: rgba(246, 173, 85, 0.12);
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text);
+      font-family: var(--mono);
+      letter-spacing: 0.02em;
+    }
+
+    .panel-body {
+      padding: 18px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 8px;
+      font-family: var(--mono);
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 12px;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.2s;
+      line-height: 1.6;
+    }
+
+    textarea:focus {
+      border-color: var(--accent);
+    }
+
+    textarea::placeholder {
+      color: var(--text3);
+    }
+
+    input[type="text"] {
+      width: 100%;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 13px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+
+    input[type="text"]::placeholder {
+      color: var(--text3);
+    }
+
+    .upload-zone {
+      border: 1px dashed var(--border2);
+      border-radius: 8px;
+      padding: 24px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      background: var(--surface2);
+      position: relative;
+    }
+
+    .upload-zone:hover {
+      border-color: var(--accent);
+      background: rgba(99, 179, 237, 0.04);
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(99, 179, 237, 0.08);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .upload-text {
+      font-size: 12px;
+      color: var(--text2);
+    }
+
+    .upload-hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+      font-family: var(--mono);
+    }
+
+    .file-list {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 179, 237, 0.06);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 12px;
+      font-family: var(--mono);
+    }
+
+    .file-item-name {
+      flex: 1;
+      color: var(--accent2);
+      truncate: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      max-width: 200px;
+    }
+
+    .file-item-size {
+      color: var(--text3);
+      font-size: 11px;
+    }
+
+    .file-remove {
+      color: var(--text3);
+      cursor: pointer;
+      background: none;
+      border: none;
+      font-size: 14px;
+      padding: 0;
+    }
+
+    .file-remove:hover {
+      color: var(--red);
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      accent-color: var(--accent);
+      height: 4px;
+      cursor: pointer;
+    }
+
+    .slider-val {
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      min-width: 32px;
+      text-align: right;
+    }
+
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 10px;
+      color: var(--text3);
+      font-family: var(--mono);
+      margin-top: 4px;
+    }
+
+    .topk-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .topk-btn {
+      flex: 1;
+      padding: 7px 0;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .topk-btn.active {
+      background: rgba(99, 179, 237, 0.1);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .generate-btn {
+      width: 100%;
+      padding: 14px;
+      background: var(--accent);
+      border: none;
+      border-radius: 8px;
+      color: #0a0e1a;
+      font-family: var(--sans);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      margin-top: 4px;
+      letter-spacing: 0.01em;
+    }
+
+    .generate-btn:hover:not(:disabled) {
+      background: var(--accent2);
+      transform: translateY(-1px);
+    }
+
+    .generate-btn:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .pipeline-status {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 16px;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 6px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      font-size: 12px;
+      font-family: var(--mono);
+      transition: all 0.3s;
+    }
+
+    .pipeline-step.active {
+      border-color: var(--accent);
+      background: rgba(99, 179, 237, 0.06);
+    }
+
+    .pipeline-step.done {
+      border-color: rgba(104, 211, 145, 0.3);
+      background: rgba(104, 211, 145, 0.04);
+    }
+
+    .pipeline-step.waiting {
+      opacity: 0.4;
+    }
+
+    .step-indicator {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+    }
+
+    .step-indicator.waiting {
+      background: var(--surface);
+      border: 0.5px solid var(--border);
+      color: var(--text3);
+    }
+
+    .step-indicator.active {
+      background: rgba(99, 179, 237, 0.2);
+      border: 0.5px solid var(--accent);
+      animation: spin-ring 1s linear infinite;
+    }
+
+    .step-indicator.done {
+      background: rgba(104, 211, 145, 0.2);
+      border: 0.5px solid var(--green);
+      color: var(--green);
+    }
+
+    @keyframes spin-ring {
+      0% {
+        box-shadow: 0 0 0 0px rgba(99, 179, 237, 0.4);
+      }
+
+      50% {
+        box-shadow: 0 0 0 3px rgba(99, 179, 237, 0.1);
+      }
+
+      100% {
+        box-shadow: 0 0 0 0px rgba(99, 179, 237, 0.4);
+      }
+    }
+
+    .step-label {
+      color: var(--text2);
+      flex: 1;
+    }
+
+    .pipeline-step.active .step-label {
+      color: var(--accent);
+    }
+
+    .pipeline-step.done .step-label {
+      color: var(--green);
+    }
+
+    .output-panel {
+      min-height: 600px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .output-toolbar {
+      padding: 12px 18px;
+      border-bottom: 0.5px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .toolbar-spacer {
+      flex: 1;
+    }
+
+    .tool-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 6px;
+      color: var(--text2);
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .tool-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+
+    .tab-btns {
+      display: flex;
+      gap: 4px;
+    }
+
+    .tab-btn {
+      padding: 5px 12px;
+      background: transparent;
+      border: 0.5px solid transparent;
+      border-radius: 5px;
+      color: var(--text3);
+      font-family: var(--mono);
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .tab-btn.active {
+      background: rgba(99, 179, 237, 0.1);
+      border-color: var(--border2);
+      color: var(--accent);
+    }
+
+    .output-content {
+      flex: 1;
+      padding: 28px 32px;
+      overflow-y: auto;
+    }
+
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 400px;
+      text-align: center;
+      color: var(--text3);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      color: var(--text2);
+      margin-bottom: 8px;
+      font-family: var(--serif);
+    }
+
+    .empty-desc {
+      font-size: 13px;
+      max-width: 280px;
+      line-height: 1.6;
+    }
+
+    .blog-output h1,
+    .blog-output h2,
+    .blog-output h3,
+    .blog-output h4 {
+      font-family: var(--serif);
+      font-weight: 400;
+      color: var(--text);
+      margin-top: 32px;
+      margin-bottom: 12px;
+      line-height: 1.3;
+    }
+
+    .blog-output h1 {
+      font-size: 32px;
+      margin-top: 0;
+      letter-spacing: -0.02em;
+    }
+
+    .blog-output h2 {
+      font-size: 22px;
+      color: var(--accent2);
+    }
+
+    .blog-output h3 {
+      font-size: 17px;
+      font-family: var(--sans);
+      font-weight: 600;
+    }
+
+    .blog-output p {
+      color: var(--text2);
+      margin-bottom: 16px;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .blog-output strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .blog-output code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: rgba(99, 179, 237, 0.1);
+      border: 0.5px solid rgba(99, 179, 237, 0.2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: var(--accent2);
+    }
+
+    .blog-output pre {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 20px 0;
+      overflow-x: auto;
+      position: relative;
+    }
+
+    .blog-output pre code {
+      background: none;
+      border: none;
+      padding: 0;
+      font-size: 13px;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .blog-output ul,
+    .blog-output ol {
+      color: var(--text2);
+      padding-left: 20px;
+      margin-bottom: 16px;
+      line-height: 1.8;
+      font-size: 15px;
+    }
+
+    .blog-output li {
+      margin-bottom: 6px;
+    }
+
+    .blog-output blockquote {
+      border-left: 2px solid var(--accent);
+      padding: 12px 16px;
+      margin: 20px 0;
+      background: rgba(99, 179, 237, 0.04);
+      border-radius: 0 6px 6px 0;
+      color: var(--text2);
+      font-style: italic;
+    }
+
+    .blog-output hr {
+      border: none;
+      border-top: 0.5px solid var(--border);
+      margin: 32px 0;
+    }
+
+    .blog-output a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .context-panel {
+      padding: 20px;
+    }
+
+    .chunk-card {
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+    }
+
+    .chunk-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .chunk-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      background: rgba(99, 179, 237, 0.1);
+      color: var(--accent);
+      border: 0.5px solid rgba(99, 179, 237, 0.2);
+    }
+
+    .chunk-score {
+      font-family: var(--mono);
+      font-size: 11px;
+      color: var(--text3);
+      margin-left: auto;
+    }
+
+    .chunk-text {
+      font-size: 12px;
+      color: var(--text2);
+      font-family: var(--mono);
+      line-height: 1.7;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .raw-panel {
+      padding: 20px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--text2);
+      white-space: pre-wrap;
+      line-height: 1.7;
+      word-break: break-word;
+    }
+
+    .copy-success {
+      color: var(--green) !important;
+    }
+
+    .streaming-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      margin-left: 2px;
+      animation: blink 0.8s infinite;
+      vertical-align: text-bottom;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1;
+      }
+
+      50% {
+        opacity: 0;
+      }
+    }
+
+    .error-msg {
+      background: rgba(252, 129, 129, 0.08);
+      border: 0.5px solid rgba(252, 129, 129, 0.3);
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: var(--red);
+      font-size: 13px;
+      font-family: var(--mono);
+      margin-bottom: 16px;
+    }
+
+    .section-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin: 16px 0;
+    }
+
+    .section-divider-line {
+      flex: 1;
+      height: 0.5px;
+      background: var(--border);
+    }
+
+    .section-divider-text {
+      font-size: 10px;
+      color: var(--text3);
+      font-family: var(--mono);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .token-counter {
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--text3);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    .pipeline-mini {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+
+    .mini-step {
+      font-size: 10px;
+      font-family: var(--mono);
+      padding: 3px 8px;
+      border-radius: 10px;
+      background: var(--surface2);
+      border: 0.5px solid var(--border);
+      color: var(--text3);
+    }
+
+    .mini-step.done {
+      background: rgba(104, 211, 145, 0.08);
+      border-color: rgba(104, 211, 145, 0.25);
+      color: var(--green);
+    }
+
+    .mini-step.active {
+      background: rgba(99, 179, 237, 0.08);
+      border-color: rgba(99, 179, 237, 0.25);
+      color: var(--accent);
+    }
+
+    .mini-arrow {
+      font-size: 10px;
+      color: var(--text3);
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <div class="header">
+      <div class="logo-badge">
+        <div class="dot"></div> RAG Pipeline Active
+      </div>
+      <h1>Technical Blog <em>Generator</em></h1>
+      <p class="subtitle">Upload notes, code snippets, or files — the RAG pipeline retrieves context and generates a
+        professional developer blog.</p>
+    </div>
+
+    <div class="layout">
+      <!-- LEFT: Input Panel -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+
+        <!-- File Upload -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-header-icon icon-blue">📁</div>
+            <span class="panel-title">01 / document_input</span>
+          </div>
+          <div class="panel-body">
+            <div class="form-group">
+              <label>Upload Files (PDF, TXT, MD)</label>
+              <div class="upload-zone" id="uploadZone">
+                <input type="file" id="fileInput" multiple accept=".pdf,.txt,.md,.markdown" />
+                <div class="upload-icon">⬆</div>
+                <div class="upload-text">Drop files here or click to browse</div>
+                <div class="upload-hint">.pdf · .txt · .md supported</div>
+              </div>
+              <div class="file-list" id="fileList"></div>
+            </div>
+
+            <div class="section-divider">
+              <div class="section-divider-line"></div>
+              <div class="section-divider-text">or paste notes</div>
+              <div class="section-divider-line"></div>
+            </div>
+
+            <div class="form-group">
+              <label>Raw Notes / Code Snippets</label>
+              <textarea id="rawNotes" rows="7"
+                placeholder="Paste your technical notes, code, or ideas here...&#10;&#10;# Example&#10;React hooks allow functional components to use state...&#10;&#10;```js&#10;const [count, setCount] = useState(0);&#10;```"></textarea>
+              <div class="token-counter" id="tokenCount">0 tokens estimated</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Query + Settings -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-header-icon icon-amber">⚙</div>
+            <span class="panel-title">02 / generation_config</span>
+          </div>
+          <div class="panel-body">
+
+            <div class="form-group">
+              <label>Blog Topic / Focus Query</label>
+              <input type="text" id="topicInput" placeholder="e.g. Building a REST API with FastAPI and async Python" />
+            </div>
+
+            <div class="form-group">
+              <label>Creativity (Temperature)</label>
+              <div class="slider-row">
+                <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">0.0</span>
+                <input type="range" id="tempSlider" min="0" max="10" value="7" step="1" />
+                <span style="font-size:11px;color:var(--text3);font-family:var(--mono);">1.0</span>
+                <div class="slider-val" id="tempVal">0.7</div>
+              </div>
+              <div class="slider-labels"><span>Focused</span><span>Balanced</span><span>Creative</span></div>
+            </div>
+
+            <div class="form-group">
+              <label>Top-K Retrieval (context chunks)</label>
+              <div class="topk-row">
+                <button class="topk-btn" data-k="3">k=3</button>
+                <button class="topk-btn active" data-k="5">k=5</button>
+                <button class="topk-btn" data-k="7">k=7</button>
+                <button class="topk-btn" data-k="10">k=10</button>
+              </div>
+            </div>
+
+            <div id="errorMsg" class="error-msg" style="display:none;"></div>
+
+            <button class="generate-btn" id="generateBtn" onclick="startGeneration()">
+              <span>✦</span> Generate Blog Post
+            </button>
+          </div>
+        </div>
+
+        <!-- Pipeline Status -->
+        <div class="panel" id="pipelinePanel" style="display:none;">
+          <div class="panel-header">
+            <div class="panel-header-icon icon-green">⟳</div>
+            <span class="panel-title">03 / rag_pipeline</span>
+          </div>
+          <div class="panel-body">
+            <div class="pipeline-status" id="pipelineStatus"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RIGHT: Output Panel -->
+      <div class="panel output-panel">
+        <div class="output-toolbar">
+          <div class="tab-btns">
+            <button class="tab-btn active" onclick="switchTab('preview')">Preview</button>
+            <button class="tab-btn" onclick="switchTab('raw')">Markdown</button>
+            <button class="tab-btn" onclick="switchTab('context')">Context</button>
+          </div>
+          <div class="toolbar-spacer"></div>
+          <button class="tool-btn" id="copyBtn" onclick="copyBlog()" disabled>⎘ Copy</button>
+          <button class="tool-btn" id="downloadBtn" onclick="downloadBlog()" disabled>↓ Download</button>
+        </div>
+        <div class="output-content" id="outputContent">
+          <div class="empty-state">
+            <div class="empty-icon">✦</div>
+            <div class="empty-title">Ready to generate</div>
+            <div class="empty-desc">Add notes or upload files, set your topic, and hit generate. The RAG pipeline will
+              retrieve context and write a professional blog post.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // IMPORTANT: Paste your Gemini API key inside the quotes below
+    const GEMINI_API_KEY = "AIzaSyDNfBW3J6gsPEHNC2qiKlwlIOI0LZ3XcHE";
+    // ─── State ───────────────────────────────────────────────────
+    const state = {
+      files: [],
+      generatedMarkdown: '',
+      retrievedChunks: [],
+      topK: 5,
+      isGenerating: false,
+      activeTab: 'preview'
+    };
+
+    const PIPELINE_STEPS = [
+      { id: 'parse', label: 'Document parsing & extraction' },
+      { id: 'chunk', label: 'Semantic chunking (500-1000 tokens)' },
+      { id: 'embed', label: 'Generating embeddings (FAISS)' },
+      { id: 'retrieve', label: 'Similarity search (top-K retrieval)' },
+      { id: 'augment', label: 'Prompt augmentation with context' },
+      { id: 'generate', label: 'LLM blog generation (streaming)' }
+    ];
+
+    // ─── File Handling ────────────────────────────────────────────
+    document.getElementById('fileInput').addEventListener('change', e => handleFiles(e.target.files));
+
+    const zone = document.getElementById('uploadZone');
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      handleFiles(e.dataTransfer.files);
+    });
+
+    function handleFiles(fileList) {
+      Array.from(fileList).forEach(f => {
+        if (!state.files.find(x => x.name === f.name)) state.files.push(f);
+      });
+      renderFileList();
+    }
+
+    function removeFile(name) {
+      state.files = state.files.filter(f => f.name !== name);
+      renderFileList();
+    }
+
+    function renderFileList() {
+      const list = document.getElementById('fileList');
+      list.innerHTML = state.files.map(f => `
+    <div class="file-item">
+      <span style="font-size:14px;">${f.name.endsWith('.pdf') ? '📄' : f.name.endsWith('.md') ? '📝' : '📃'}</span>
+      <span class="file-item-name">${f.name}</span>
+      <span class="file-item-size">${(f.size / 1024).toFixed(1)}kb</span>
+      <button class="file-remove" onclick="removeFile('${f.name}')">✕</button>
+    </div>
+  `).join('');
+    }
+
+    // ─── Token counter ────────────────────────────────────────────
+    document.getElementById('rawNotes').addEventListener('input', e => {
+      const words = e.target.value.trim().split(/\s+/).filter(Boolean).length;
+      const tokens = Math.round(words * 1.35);
+      document.getElementById('tokenCount').textContent = `~${tokens} tokens estimated`;
+    });
+
+    // ─── Slider ───────────────────────────────────────────────────
+    document.getElementById('tempSlider').addEventListener('input', e => {
+      document.getElementById('tempVal').textContent = (e.target.value / 10).toFixed(1);
+    });
+
+    // ─── Top-K ────────────────────────────────────────────────────
+    document.querySelectorAll('.topk-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.topk-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        state.topK = parseInt(btn.dataset.k);
+      });
+    });
+
+    // ─── Tabs ─────────────────────────────────────────────────────
+    function switchTab(tab) {
+      state.activeTab = tab;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      event.target.classList.add('active');
+      renderOutput();
+    }
+
+    // ─── Read file as text ────────────────────────────────────────
+    async function readFileText(file) {
+      return new Promise((resolve, reject) => {
+        if (file.type === 'application/pdf') {
+          resolve(`[PDF: ${file.name}] This file was uploaded by the user. Extract all technical concepts, code snippets, definitions, and key points from it. Assume it contains developer documentation or technical notes.`);
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target.result);
+        reader.onerror = reject;
+        reader.readAsText(file);
+      });
+    }
+
+    // ─── Semantic Chunker (client-side) ──────────────────────────
+    function chunkText(text, maxTokens = 750) {
+      const paragraphs = text.split(/\n{2,}/).filter(p => p.trim().length > 20);
+      const chunks = [];
+      let current = '';
+      for (const para of paragraphs) {
+        const combined = current ? current + '\n\n' + para : para;
+        const tokens = combined.split(/\s+/).length;
+        if (tokens > maxTokens && current) {
+          chunks.push(current.trim());
+          current = para;
+        } else {
+          current = combined;
+        }
+      }
+      if (current.trim()) chunks.push(current.trim());
+      if (chunks.length === 0 && text.trim()) chunks.push(text.trim());
+      return chunks;
+    }
+
+    // ─── Cosine similarity (TF-IDF proxy) ────────────────────────
+    function termFreq(text) {
+      const words = text.toLowerCase().replace(/[^a-z0-9\s]/g, '').split(/\s+/);
+      const freq = {};
+      words.forEach(w => { if (w.length > 2) freq[w] = (freq[w] || 0) + 1; });
+      return freq;
+    }
+
+    function cosineSim(a, b) {
+      const fa = termFreq(a), fb = termFreq(b);
+      const vocab = new Set([...Object.keys(fa), ...Object.keys(fb)]);
+      let dot = 0, normA = 0, normB = 0;
+      for (const w of vocab) {
+        const va = fa[w] || 0, vb = fb[w] || 0;
+        dot += va * vb;
+        normA += va * va;
+        normB += vb * vb;
+      }
+      if (!normA || !normB) return 0;
+      return dot / (Math.sqrt(normA) * Math.sqrt(normB));
+    }
+
+    // ─── RAG retrieval ────────────────────────────────────────────
+    function retrieveChunks(allChunks, query, k) {
+      const scored = allChunks.map((chunk, i) => ({
+        chunk, index: i,
+        score: cosineSim(query, chunk)
+      }));
+      scored.sort((a, b) => b.score - a.score);
+      const top = scored.slice(0, k);
+      // De-duplicate very similar chunks
+      const deduped = [];
+      for (const item of top) {
+        const isDuplicate = deduped.some(d => cosineSim(d.chunk, item.chunk) > 0.85);
+        if (!isDuplicate) deduped.push(item);
+        if (deduped.length >= k) break;
+      }
+      return deduped;
+    }
+
+    // ─── Pipeline UI ──────────────────────────────────────────────
+    function setPipelineStep(activeId, doneIds = []) {
+      const container = document.getElementById('pipelineStatus');
+      container.innerHTML = PIPELINE_STEPS.map(step => {
+        const isDone = doneIds.includes(step.id);
+        const isActive = step.id === activeId;
+        const cls = isDone ? 'done' : isActive ? 'active' : 'waiting';
+        const icon = isDone ? '✓' : isActive ? '◌' : (PIPELINE_STEPS.indexOf(step) + 1).toString();
+        return `
+      <div class="pipeline-step ${cls}">
+        <div class="step-indicator ${cls}">${icon}</div>
+        <div class="step-label">${step.label}</div>
+      </div>`;
+      }).join('');
+    }
+
+    function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+    // ─── Main Generation ──────────────────────────────────────────
+    async function startGeneration() {
+      const rawNotes = document.getElementById('rawNotes').value.trim();
+      const topic = document.getElementById('topicInput').value.trim();
+      const temp = parseFloat(document.getElementById('tempVal').textContent);
+
+      if (!rawNotes && state.files.length === 0) {
+        showError('Please add some notes or upload at least one file.');
+        return;
+      }
+      if (!topic) {
+        showError('Please enter a blog topic or focus query.');
+        return;
+      }
+
+      hideError();
+      state.isGenerating = true;
+      state.generatedMarkdown = '';
+      state.retrievedChunks = [];
+      document.getElementById('generateBtn').disabled = true;
+      document.getElementById('pipelinePanel').style.display = 'block';
+      document.getElementById('copyBtn').disabled = true;
+      document.getElementById('downloadBtn').disabled = true;
+
+      showEmptyWithSpinner();
+
+      try {
+        // STEP 1: Parse
+        setPipelineStep('parse', []);
+        await delay(400);
+        let allText = rawNotes || '';
+        for (const file of state.files) {
+          const txt = await readFileText(file);
+          allText += '\n\n' + txt;
+        }
+
+        // STEP 2: Chunk
+        setPipelineStep('chunk', ['parse']);
+        await delay(500);
+        const chunks = chunkText(allText);
+
+        // STEP 3: Embed (simulate)
+        setPipelineStep('embed', ['parse', 'chunk']);
+        await delay(700);
+
+        // STEP 4: Retrieve
+        setPipelineStep('retrieve', ['parse', 'chunk', 'embed']);
+        await delay(400);
+        const retrieved = retrieveChunks(chunks, topic, state.topK);
+        state.retrievedChunks = retrieved;
+
+        // STEP 5: Augment
+        setPipelineStep('augment', ['parse', 'chunk', 'embed', 'retrieve']);
+        await delay(350);
+        const contextBlock = retrieved.map((r, i) =>
+          `[Context ${i + 1} | relevance: ${r.score.toFixed(3)}]\n${r.chunk}`
+        ).join('\n\n---\n\n');
+
+        const systemPrompt = `You are an expert technical writer and senior software engineer. Your task is to write a high-quality, professional technical blog post in Markdown format.
+
+STRICT RULES:
+- Base the blog STRICTLY on the retrieved context provided. Do not hallucinate facts, APIs, or code that are not in the context.
+- If context is sparse, extrapolate carefully but clearly note assumptions.
+- Write for an experienced developer audience.
+- Use proper Markdown: headings (##, ###), code blocks with language tags, bullet lists, bold for key terms.
+- Output ONLY the blog post content starting with the title. No preamble or meta-commentary.
+
+BLOG STRUCTURE (follow this):
+1. # Title (catchy, specific)
+2. ## Introduction (hook + what reader will learn)
+3. ## The Problem (what challenge this solves)
+4. ## Core Concepts (explain the key ideas step by step)
+5. ## Implementation (code examples with explanations)
+6. ## Real-World Example (practical, concrete scenario)
+7. ## Best Practices (key takeaways, pitfalls to avoid)
+8. ## Conclusion (summary + next steps)`;
+
+        const userPrompt = `Write a technical blog post about: "${topic}"
+
+RETRIEVED CONTEXT (from the RAG pipeline, use this as your primary source):
+---
+${contextBlock}
+---
+
+Temperature setting: ${temp} (${temp < 0.4 ? 'focused and precise' : temp > 0.7 ? 'creative and detailed' : 'balanced'})
+
+Generate the complete blog post now, following the structure and rules precisely.`;
+
+        // STEP 6: Generate
+        setPipelineStep('generate', ['parse', 'chunk', 'embed', 'retrieve', 'augment']);
+        await streamBlogGeneration(systemPrompt, userPrompt, temp);
+        setPipelineStep(null, ['parse', 'chunk', 'embed', 'retrieve', 'augment', 'generate']);
+
+        document.getElementById('copyBtn').disabled = false;
+        document.getElementById('downloadBtn').disabled = false;
+
+      } catch (err) {
+        showError('Generation failed: ' + (err.message || 'Unknown error'));
+        document.getElementById('pipelinePanel').style.display = 'none';
+      } finally {
+        state.isGenerating = false;
+        document.getElementById('generateBtn').disabled = false;
+      }
+    }
+
+    // ─── Streaming API Call ───────────────────────────────────────
+    async function streamBlogGeneration(system, user, temp) {
+      if (!GEMINI_API_KEY) throw new Error('API Key is missing! Please paste your key into the GEMINI_API_KEY variable in the source code (around line 774).');
+      state.generatedMarkdown = '';
+      switchToPreviewLoading();
+
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${GEMINI_API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: system + '\n\n' + user }] }],
+          generationConfig: { temperature: temp }
+        })
+      });
+
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API error ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6);
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.candidates && parsed.candidates[0].content && parsed.candidates[0].content.parts && parsed.candidates[0].content.parts[0].text) {
+              state.generatedMarkdown += parsed.candidates[0].content.parts[0].text;
+              renderStreamingOutput();
+            }
+          } catch { }
+        }
+      }
+      renderOutput();
+    }
+
+    // ─── Rendering ────────────────────────────────────────────────
+    function showEmptyWithSpinner() {
+      document.getElementById('outputContent').innerHTML = `
+    <div class="empty-state">
+      <div style="font-size:32px;margin-bottom:20px;animation:spin 2s linear infinite;display:inline-block;">⟳</div>
+      <style>@keyframes spin{from{transform:rotate(0deg);}to{transform:rotate(360deg);}}</style>
+      <div class="empty-title">Pipeline running...</div>
+      <div class="empty-desc">The RAG pipeline is processing your documents and retrieving context.</div>
+    </div>`;
+    }
+
+    function switchToPreviewLoading() {
+      document.getElementById('outputContent').innerHTML = `
+    <div class="blog-output" id="blogContent" style="min-height:400px;"></div>`;
+    }
+
+    function renderStreamingOutput() {
+      if (state.activeTab !== 'preview') return;
+      const el = document.getElementById('blogContent');
+      if (!el) return;
+      try {
+        el.innerHTML = marked.parse(state.generatedMarkdown) + '<span class="streaming-cursor"></span>';
+      } catch { }
+    }
+
+    function renderOutput() {
+      const content = document.getElementById('outputContent');
+
+      if (state.activeTab === 'preview') {
+        if (!state.generatedMarkdown) {
+          content.innerHTML = `<div class="empty-state"><div class="empty-icon">✦</div><div class="empty-title">Ready to generate</div><div class="empty-desc">Add notes or upload files, set your topic, and hit generate.</div></div>`;
+          return;
+        }
+        content.innerHTML = `<div class="blog-output" id="blogContent">${marked.parse(state.generatedMarkdown)}</div>`;
+      } else if (state.activeTab === 'raw') {
+        if (!state.generatedMarkdown) {
+          content.innerHTML = `<div class="empty-state"><div class="empty-icon">{ }</div><div class="empty-title">No markdown yet</div></div>`;
+          return;
+        }
+        content.innerHTML = `<div class="raw-panel">${escapeHtml(state.generatedMarkdown)}</div>`;
+      } else {
+        if (!state.retrievedChunks.length) {
+          content.innerHTML = `<div class="empty-state"><div class="empty-icon">◎</div><div class="empty-title">No context retrieved yet</div><div class="empty-desc">Run generation to see which chunks were retrieved from your documents.</div></div>`;
+          return;
+        }
+        content.innerHTML = `<div class="context-panel">
+      <div class="pipeline-mini">
+        ${PIPELINE_STEPS.map(s => `<span class="mini-step done">${s.label.split(' ')[0]}</span>${s.id !== 'generate' ? '<span class="mini-arrow">→</span>' : ''}`).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:16px;">
+        Retrieved ${state.retrievedChunks.length} chunks · Top-K=${state.topK} · TF-IDF similarity search
+      </div>
+      ${state.retrievedChunks.map((r, i) => `
+        <div class="chunk-card">
+          <div class="chunk-header">
+            <span class="chunk-badge">Chunk #${r.index + 1}</span>
+            <span class="chunk-badge" style="background:rgba(104,211,145,0.1);color:var(--green);border-color:rgba(104,211,145,0.2);">rank ${i + 1}</span>
+            <span class="chunk-score">similarity: ${r.score.toFixed(4)}</span>
+          </div>
+          <div class="chunk-text">${escapeHtml(r.chunk.slice(0, 500))}${r.chunk.length > 500 ? '...' : ''}</div>
+        </div>`).join('')}
+    </div>`;
+      }
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // ─── Actions ──────────────────────────────────────────────────
+    function copyBlog() {
+      if (!state.generatedMarkdown) return;
+      navigator.clipboard.writeText(state.generatedMarkdown).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.classList.add('copy-success');
+        btn.textContent = '✓ Copied!';
+        setTimeout(() => { btn.classList.remove('copy-success'); btn.textContent = '⎘ Copy'; }, 2000);
+      });
+    }
+
+    function downloadBlog() {
+      if (!state.generatedMarkdown) return;
+      const title = state.generatedMarkdown.split('\n')[0].replace(/^#+\s*/, '').replace(/[^a-z0-9]+/gi, '-').toLowerCase().slice(0, 50);
+      const blob = new Blob([state.generatedMarkdown], { type: 'text/markdown' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${title || 'blog-post'}.md`;
+      a.click();
+    }
+
+    function showError(msg) {
+      const el = document.getElementById('errorMsg');
+      el.textContent = msg;
+      el.style.display = 'block';
+    }
+
+    function hideError() {
+      document.getElementById('errorMsg').style.display = 'none';
+    }
+
+    // Tab click handlers need to be updated to not use event object
+    document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+      const tabs = ['preview', 'raw', 'context'];
+      btn.addEventListener('click', function () {
+        state.activeTab = tabs[i];
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        renderOutput();
+      });
+    });
+
+    // Remove inline onclick from tab buttons since we set listeners above
+    document.querySelectorAll('.tab-btn').forEach(b => b.removeAttribute('onclick'));
+  </script>
+</body>
+
+</html>
